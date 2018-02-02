@@ -15,7 +15,7 @@
 ` npm run init-DB`
 
 * Correr el servidor
-`npm run start-serve`
+`npm run start-server`
 
 
 #Servicios
