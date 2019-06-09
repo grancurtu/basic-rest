@@ -21,7 +21,7 @@ const sale = require('./routes/sale.js');
 //it's working
 app.get('/', (req, res) =>res.send('Yes another rest API... oh HELLO!!!!'));
 
-
+//TODO refactor this so the index loads al services
 app.get('/user', user.get);
 app.post('/user', user.post);
 app.put('/user', user.put);

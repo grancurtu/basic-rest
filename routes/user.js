@@ -1,20 +1,6 @@
 const db = require('../db/index.js');
 const util = require('util');
-
-function validateField(field,name,required,extra){
-  const invalidReg = /\s*'\s*/;
-
-  if(required && (!field || field.toString().trim()==='')){
-    return {valid: false, msg:"The field '"+name+"' is mandatory"};
-  }
-
-  if(typeof field!='string' || invalidReg.test(field)||(extra && !extra.test(field))){
-    return {valid: false, msg:"The field '"+name+"' is not valid"};
-  }
-
-  return {valid: true, msg:''};
-
-}
+const validator = require('../lib/validator.js');
 
 function listUsers (req, res) {
 
@@ -36,21 +22,48 @@ function listUsers (req, res) {
 }
 
 function validateNewUser(user){
-  let validation = validateField(user.name,'name',true);
+  let validation = validator.validateEmail(user.email);
   if(!validation.valid)
     return  validation;
 
-  validation = validateField(user.lastname,'lastname',true);
-  if(!validation.valid)
-    return  validation;
-
-  validation = validateField(user.email,'email',true,/^([a-z0-9_\.-]+)@([\da-z\.-]+)\.([a-z\.]{2,6})$/);
+  validation = validator.validateField(user.name,'name',true);
   if(!validation.valid)
     return validation;
 
-  validation = validateField(user.address||'','address');
+  validation = validator.validateField(user.lastname,'lastname',true);
+  if(!validation.valid)
+    return  validation;  
+
+  validation = validator.validateField(user.address||'','address');
   if(!validation.valid)
     return  validation;
+
+  return validation;
+}
+
+function validateUserToUpdate(user){
+
+  let validation = validator.validateEmail(user.email);
+  if(!validation.valid)
+    return validation;
+
+  if(user.name){
+    validation = validator.validateField(user.name,'name');
+    if(!validation.valid)
+      return  validation;
+  }
+  
+  if(user.lastname){
+    validation = validator.validateField(user.lastname,'lastname');
+    if(!validation.valid)
+      return  validation;
+  }
+
+  if(user.address){
+    validation = validator.validateField(user.address||'','address');
+    if(!validation.valid)
+      return  validation;
+  }
 
   return validation;
 }
@@ -98,7 +111,7 @@ function createUser (req, res) {
 function approveUser (req, res)  {
   let updateQuery = "UPDATE user set userstateid=2 where email = '%s' and userstateid=1 ";
 
-  validation = validateField(req.body.email,'email',true);
+  validation = validator.validateField(req.body.email,'email',true);
   if(!validation.valid){
     res.status(400).send({error:validation.msg})
   } else {
@@ -123,28 +136,6 @@ function approveUser (req, res)  {
       });
   }
 
-}
-
-function validateUserToUpdate(user){
-
-  let validation = validateField(user.email,'email',true,/^([a-z0-9_\.-]+)@([\da-z\.-]+)\.([a-z\.]{2,6})$/);
-  if(!validation.valid)
-    return validation;
-
-  validation = validateField(user.name,'name');
-  if(!validation.valid)
-    return  validation;
-
-  validation = validateField(user.lastname,'lastname');
-  if(!validation.valid)
-    return  validation;
-
-
-  validation = validateField(user.address||'','address');
-  if(!validation.valid)
-    return  validation;
-
-  return validation;
 }
 
 function updateUser (req, res)  {
@@ -198,7 +189,7 @@ function disableUser (req, res)  {
 
   let updateQuery = "UPDATE user set userstateid=3 where email = '%s' and userstateid<>3";
 
-  validation = validateField(req.body.email,'email',true);
+  validation = validator.validateField(req.body.email,'email',true);
   if(!validation.valid){
     res.status(400).send({error:validation.msg})
   } else {

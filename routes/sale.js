@@ -1,47 +1,12 @@
 const db = require('../db/index.js');
 const util = require('util');
-
-function validateField(field,name,required,extra){
-  const invalidReg = /\s*'\s*/;
-
-  if(required && (!field || field.toString().trim()==='')){
-    return {valid: false, msg:"The field '"+name+"' is mandatory"};
-  }
-
-  if(typeof field!='string' || invalidReg.test(field)||(extra && !extra.test(field))){
-    return {valid: false, msg:"The field '"+name+"' is not valid"};
-  }
-
-  return {valid: true, msg:''};
-
-}
-
-function validateNumber(field,name,required,extra){
-  const invalidReg = /\s*'\s*/;
-
-  if(Number.isNaN(field) || field <= 0){
-    return {valid: false, msg:"The mandatory field '"+name+"' is not valid"};
-  }
-
-  return {valid: true, msg:''};
-
-}
-
-function validateDate(field,name,required,extra){
-  const invalidReg = /\s*'\s*/;
-
-  if( typeof field !='string'  || field.trim()==='' || isNaN(Date.parse(field)) || invalidReg.test(field))
-    return {valid: false, msg:"The mandatory field '"+name+"' is not valid"};
-
-  return {valid: true, msg:''};
-
-}
+const validator = require('../lib/validator.js');
 
 function listSales (req, res) {
 
   let selectQuery = "SELECT sale.uuid,sale.amount,sale.date,sale.disabled,user.email FROM sale INNER JOIN user ON user.userid=sale.userid WHERE user.email='%s'";
 
-  validation = validateField(req.query.email,'email',true);
+  validation = validator.validateField(req.query.email,'email',true);
   if(!validation.valid){
     res.status(400).send({error:validation.msg})
   } else {
@@ -63,20 +28,20 @@ function listSales (req, res) {
 }
 
 function validateNewSale(sale){
-  let validation = validateField(sale.uuid,'uuid',true);
+  let validation = validator.validateField(sale.uuid,'uuid',true);
   if(!validation.valid)
     return  validation;
 
-  validation = validateNumber(sale.amount,'amount',true);
+  validation = validator.validateAmount(sale.amount);
   if(!validation.valid)
     return  validation;
 
-  validation = validateDate(sale.date,'date',true);
+  validation = validator.validateDate(sale.date);
   if(!validation.valid)
     return  validation;
 
 
-  validation = validateField(sale.email,'email',true,/^([a-z0-9_\.-]+)@([\da-z\.-]+)\.([a-z\.]{2,6})$/);
+  validation = validator.validateEmail(sale.email);
   if(!validation.valid)
     return validation;
 
@@ -141,7 +106,7 @@ function cancelSale (req, res) {
 
   let updateQuery = "UPDATE sale SET disabled=1 WHERE uuid= '%s' and disabled=0";
 
-  validation = validateField(req.body.uuid,'uuid',true);
+  validation = validator.validateField(req.body.uuid,'uuid',true);
   if(!validation.valid){
     res.status(400).send({error:validation.msg})
   }else {
